@@ -22,7 +22,7 @@
       "target": "dmg"
     },
     "win": {
-      "target": "nsis",
+      "target": "portable",
       "asar": true
     },
     "nsis": {

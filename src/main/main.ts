@@ -14,6 +14,8 @@ function createWindow(): void {
     height: 600,
     width: 800,
     webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
       webSecurity: false,
       devTools: process.env.NODE_ENV !== 'production',
     },
