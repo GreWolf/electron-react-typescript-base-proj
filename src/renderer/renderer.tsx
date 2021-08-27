@@ -4,10 +4,13 @@
 // Import the styles here to process them with webpack
 import '_public/style.css';
 
+import {Game} from './app/app'
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as os from 'os';
 import * as fs from 'fs'
+import {SyntheticEvent} from "react";
 
 // import * as fs from 'fs';
 
@@ -88,50 +91,83 @@ class Clock extends React.Component<ClockProps, ClockState> {
     }
 }
 
-let dest_path = String.raw`E:\Roslesinforg\Дела\2021.08.15 - СК 63`;
+let dest_path = String.raw`E:\2021.05.24_LPP_Comparison`;
+
+
+type FileProps = {filename: string}
+type FileState = {}
+
+class File extends React.Component<FileProps, FileState> {
+
+    render() {
+        return (
+            <div>
+                <p>{this.props.filename}</p>
+            </div>
+        );
+    }
+}
+
 
 type FileListProps = {}
-type FileListState = { paths: string[] }
+type FileListState = { files: string[], destPath: string}
 
 class FileList extends React.Component<FileListProps, FileListState> {
     constructor(props: Readonly<FileListProps>) {
         super(props);
 
-        this.state = {paths: []}
+        this.state = {
+            files: [],
+            destPath: ''
+        }
 
         this.getFileList = this.getFileList.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+        this._handleKeyDown = this._handleKeyDown.bind(this);
     }
 
-    getFileList(): void{
-    // getFileList(dest_path: string): void{
-        this.setState({paths: fs.readdirSync(dest_path)})
+    getFileList(): void {
+        // getFileList(dest_path: string): void{
+        this.setState({files: fs.readdirSync(this.state.destPath)})
+    }
+
+    handleChange(event: any) {
+        this.setState({destPath: event.target.value})
+    }
+
+    _handleKeyDown(event: any) {
+        console.log(event)
+        if (event.key === "Enter"){
+            console.log("Enter")
+
+            this.setState({destPath: event.target.value})
+        }
     }
 
     render() {
         return (
             <div>
+                <input
+                    type="text"
+                    onChange={this.handleChange}
+                    value={this.state.destPath}
+                    onKeyDown={this._handleKeyDown}
+                />
                 <button onClick={this.getFileList}>Вывести список файлов</button>
                 <ul>
                     {
-                        this.state.paths.map(function(path){
-                            return <li>{path}</li>
+                        this.state.files.map(function (file) {
+                            return <li key={file}><File filename={file}/></li>
                         })
                     }
                 </ul>
             </div>
         )
-}
+
+    }
 }
 
 ReactDOM.render(
-    <div className="app">
-        <h4>Welcome to React, Electron and Typescript</h4>
-        <p>Hello</p>
-        <ClickButton val="777"/>
-        <p>{os.hostname()}</p>
-        <p>{[1, 2, 3, 4]}</p>
-        <Clock/>
-        <FileList/>
-    </div>,
-    document.getElementById('app'),
+    <FileList />,
+    document.getElementById('root'),
 );

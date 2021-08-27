@@ -17,6 +17,8 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "sourceMap": true,
+//    "inlineSourceMap": true,
+//    "inlineSources": true,
     "target": "esnext"
   },
   "exclude": ["node_modules"]
