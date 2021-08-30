@@ -3,6 +3,7 @@
  */
 // Import the styles here to process them with webpack
 import '_public/style.css';
+import * as chokidar from 'chokidar';
 
 import {Game} from './app/app'
 
@@ -110,50 +111,108 @@ class File extends React.Component<FileProps, FileState> {
 
 
 type FileListProps = {}
-type FileListState = { files: string[], destPath: string}
+type FileListState = { files: string[], inputValue: string, previousPath: string, watcher: chokidar.FSWatcher, paths: string[]}
 
 class FileList extends React.Component<FileListProps, FileListState> {
+    // watcher: undefined | chokidar.FSWatcher;
+
     constructor(props: Readonly<FileListProps>) {
         super(props);
 
+        const initialPath = '.'
+
         this.state = {
             files: [],
-            destPath: ''
+            inputValue: '',
+            paths: [],
+            previousPath: "",
+            watcher: chokidar.watch(initialPath, {
+                    ignored: /(^|[\/\\])\../, // ignore dotfiles
+                    persistent: true,
+                    ignoreInitial: true,
+                    depth: 0
+                }),
+
         }
 
-        this.getFileList = this.getFileList.bind(this);
+        this.state.watcher.on('all', (eventName, path, stats) => {
+                this.showFileList()
+        })
+
+        this.state.watcher.unwatch(initialPath)
+
+        this.showFileList = this.showFileList.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this._handleKeyDown = this._handleKeyDown.bind(this);
     }
 
-    getFileList(): void {
-        // getFileList(dest_path: string): void{
-        this.setState({files: fs.readdirSync(this.state.destPath)})
+    showFileList(): void {
+
+
+        return
     }
 
-    handleChange(event: any) {
-        this.setState({destPath: event.target.value})
-    }
 
-    _handleKeyDown(event: any) {
-        console.log(event)
-        if (event.key === "Enter"){
-            console.log("Enter")
+            // if (this.state.destPath !== this.state.previousPath) {
+            //     this.state.watcher.unwatch(this.state.previousPath)
+            //     this.state.watcher.add(destPath)
+            //     this.state.previousPath = this.state.destPath
+            //     this.state.files = []
+            // }
 
-            this.setState({destPath: event.target.value})
+
+
+        //     if (this.state.watcher) {
+        //         console.log("Существует")
+        //         console.log(this.state.watcher.getWatched())
+        //
+        //         console.log("Добавлен путь")
+        //         console.log(this.state.watcher.getWatched())
+        //     }
+        //
+        //     this.state.watcher!.on('all', (eventName, path, stats) => {
+        //         this.setState({files: fs.readdirSync(destPath)})
+        //
+        //     })
+        //
+        // }
+
+    // }
+
+    handleChange(event: React.ChangeEvent<HTMLInputElement>): void {
+        const inputValue: string = event.currentTarget.value
+        this.setState({inputValue: inputValue})
+
+        this.showFileList()
+
+
+        if (fs.existsSync(inputValue)) {
+            if (this.state.inputValue !== this.state.previousPath) {
+
+                this.state.watcher.unwatch(this.state.previousPath)
+                this.state.watcher.add(inputValue)
+                this.setState({files: fs.readdirSync(inputValue)})
+            }
         }
     }
+    //
+    // _handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>): void  {
+    //
+    //     if (event.key === "Enter"){
+    //         this.setState({inputValue: event.currentTarget.value})
+    //     }
+    // }
 
     render() {
+        const destPath = this.state.inputValue;
+
         return (
             <div>
                 <input
                     type="text"
                     onChange={this.handleChange}
-                    value={this.state.destPath}
-                    onKeyDown={this._handleKeyDown}
+                    value={this.state.inputValue}
+                    // onKeyDown={this._handleKeyDown}
                 />
-                <button onClick={this.getFileList}>Вывести список файлов</button>
                 <ul>
                     {
                         this.state.files.map(function (file) {
