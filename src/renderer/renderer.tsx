@@ -157,11 +157,19 @@ class FileList extends React.Component<FileListProps, FileListState> {
         }
     }
 
-    onKeyPressed(e: React.KeyboardEvent<HTMLDivElement>) {
-        if(e.key === "Backspace"){
+     onKeyPressed(e: KeyboardEvent) {
+        if (e.key === "Backspace") {
             const newPath = path.dirname(this.state.path)
             this.setState({inputValue: newPath, path: newPath})
         }
+    }
+
+    componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
     }
 
     clickHandler(path: string): void {
@@ -177,7 +185,7 @@ class FileList extends React.Component<FileListProps, FileListState> {
         files.sort()
 
         return (
-            <div onKeyDown={this.onKeyPressed} tabIndex={0}>
+            <div>
                 <input
                     type="text"
                     onChange={this.handleChange}
@@ -201,7 +209,6 @@ class FileList extends React.Component<FileListProps, FileListState> {
                     }
                     </tbody>
                 </table>
-
             </div>
         )
     }
