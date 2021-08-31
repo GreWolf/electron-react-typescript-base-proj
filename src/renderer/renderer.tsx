@@ -5,205 +5,160 @@
 import '_public/style.css';
 import * as chokidar from 'chokidar';
 
-import {Game} from './app/app'
-
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as os from 'os';
 import * as fs from 'fs'
-import {SyntheticEvent} from "react";
+import * as path from 'path'
 
-// import * as fs from 'fs';
-
-interface ClickButtonProps {
-    val: string
-}
-
-// class ClickButton extends React.Component<ClickButtonProps> {
-class ClickButton<P extends ClickButtonProps> extends React.Component<P> {
-
-    constructor(props: Readonly<P>) {
-        super(props);
-
-        this.press = this.press.bind(this);
-    }
-
-    press(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        // console.log(this);
-        console.log(e);
-        // alert("Hello React!")
-    }
-
-    render() {
-        return (
-            <div>
-                <p>props = {this.props.val}</p>
-                <button onClick={this.press}>Click</button>
-            </div>
-        );
-    }
-}
-
-type ClockProps = {};
-type ClockState = { date: Date, name: string };
-
-class Clock extends React.Component<ClockProps, ClockState> {
-
-    timerId: NodeJS.Timeout
-
-    constructor(props: Readonly<ClockProps>) {
-        super(props);
-        this.state = {date: new Date(), name: "Tom"};
-        this.unmount = this.unmount.bind(this);
-    }
-
-    unmount() {
-        ReactDOM.unmountComponentAtNode(document.getElementById("app")!);
-    }
-
-    componentDidMount() {
-        this.timerId = setInterval(
-            () => this.tick(),
-            1000
-        );
-        console.log("componentDidMount()");
-    }
-
-    componentWillUnmount() {
-        clearInterval(this.timerId);
-        console.log("componentWillUnmount()");
-    }
-
-    tick() {
-        this.setState({
-            date: new Date()
-        });
-        console.log(this.state);
-    }
-
-    render() {
-        return (
-            <div>
-                <h1>Привет, {this.state.name}</h1>
-                <h2>Текущее время {this.state.date.toLocaleTimeString()}.</h2>
-                <button onClick={this.unmount}>Unmount</button>
-            </div>
-        );
-    }
-}
-
-let dest_path = String.raw`E:\2021.05.24_LPP_Comparison`;
-
-
-type FileProps = {filename: string}
+type FileProps = { filename: string, path: string }
 type FileState = {}
 
 class File extends React.Component<FileProps, FileState> {
+    private clickTimeout: NodeJS.Timeout | null;
+
+    constructor(props: Readonly<FileProps>) {
+        super(props);
+
+        this.handleClick = this.handleClick.bind(this)
+    }
+
+    handleClick() {
+
+        if (this.clickTimeout !== null) {
+            console.log('double click executes')
+            clearTimeout(this.clickTimeout)
+            this.clickTimeout = null
+
+            const fileInfo = this.getFileInfo(path.join(this.props.path, this.props.filename))
+
+            if (fileInfo.isDirectory) {
+                console.log("isDirectory")
+            }
+
+        } else {
+            console.log('single click')
+            this.clickTimeout = setTimeout(() => {
+                console.log('first click executes ')
+                clearTimeout(this.clickTimeout!)
+                this.clickTimeout = null
+            }, 2000)
+        }
+
+
+    }
+
+    componentWillMount() {
+        this.clickTimeout = null
+    }
+
+    getFileInfo(fullPath: string) {
+        let access = true
+
+        let isDirectory = false
+        let filename = this.props.filename
+        let extension = null
+        let size = null
+
+        try {
+            fs.lstatSync(fullPath)
+        } catch (err) {
+            access = false
+        }
+
+        if (access) {
+            const stat: fs.Stats = fs.lstatSync(fullPath)
+            isDirectory = stat.isDirectory()
+            extension = null
+            size = !stat.isDirectory() ? stat.size : null
+        }
+
+        return {
+            filename: filename,
+            isDirectory: isDirectory,
+            extension: extension,
+            size: size
+        }
+
+    }
 
     render() {
+
+        const fileInfo = this.getFileInfo(path.join(this.props.path, this.props.filename))
+
         return (
-            <div>
-                <p>{this.props.filename}</p>
-            </div>
-        );
+            <tr onClick={() => this.handleClick()}>
+                <td>{fileInfo.isDirectory}</td>
+                <td>{fileInfo.filename}</td>
+                <td>{fileInfo.extension}</td>
+                <td>{fileInfo.size}</td>
+            </tr>
+        )
+
     }
 }
 
 
 type FileListProps = {}
-type FileListState = { files: string[], inputValue: string, previousPath: string, watcher: chokidar.FSWatcher, paths: string[]}
+type FileListState = { inputValue: string, path: string, watcher: chokidar.FSWatcher }
 
 class FileList extends React.Component<FileListProps, FileListState> {
-    // watcher: undefined | chokidar.FSWatcher;
 
     constructor(props: Readonly<FileListProps>) {
         super(props);
 
-        const initialPath = '.'
+        const initialPath = __dirname
+
+        console.log(initialPath)
 
         this.state = {
-            files: [],
             inputValue: '',
-            paths: [],
-            previousPath: "",
+            path: initialPath,
             watcher: chokidar.watch(initialPath, {
-                    ignored: /(^|[\/\\])\../, // ignore dotfiles
-                    persistent: true,
-                    ignoreInitial: true,
-                    depth: 0
-                }),
+                ignored: /(^|[\/\\])\../, // ignore dotfiles
+                persistent: true,
+                ignoreInitial: true,
+                depth: 0
+            }),
 
         }
 
         this.state.watcher.on('all', (eventName, path, stats) => {
-                this.showFileList()
+            console.log('this.state.watcher.on')
+            console.log(this.state.watcher.getWatched())
+            this.setState({path: this.state.path})
         })
 
         this.state.watcher.unwatch(initialPath)
 
-        this.showFileList = this.showFileList.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
-    showFileList(): void {
-
-
-        return
-    }
-
-
-            // if (this.state.destPath !== this.state.previousPath) {
-            //     this.state.watcher.unwatch(this.state.previousPath)
-            //     this.state.watcher.add(destPath)
-            //     this.state.previousPath = this.state.destPath
-            //     this.state.files = []
-            // }
-
-
-
-        //     if (this.state.watcher) {
-        //         console.log("Существует")
-        //         console.log(this.state.watcher.getWatched())
-        //
-        //         console.log("Добавлен путь")
-        //         console.log(this.state.watcher.getWatched())
-        //     }
-        //
-        //     this.state.watcher!.on('all', (eventName, path, stats) => {
-        //         this.setState({files: fs.readdirSync(destPath)})
-        //
-        //     })
-        //
-        // }
-
-    // }
-
     handleChange(event: React.ChangeEvent<HTMLInputElement>): void {
         const inputValue: string = event.currentTarget.value
-        this.setState({inputValue: inputValue})
 
-        this.showFileList()
-
+        console.log("handleChange()")
+        console.log(this.state.watcher.getWatched())
 
         if (fs.existsSync(inputValue)) {
-            if (this.state.inputValue !== this.state.previousPath) {
-
-                this.state.watcher.unwatch(this.state.previousPath)
+            if (this.state.path !== inputValue) {
+                this.state.watcher.unwatch(this.state.path)
                 this.state.watcher.add(inputValue)
-                this.setState({files: fs.readdirSync(inputValue)})
+                this.setState({inputValue: inputValue, path: inputValue})
+            } else {
+                this.setState({inputValue: inputValue})
             }
+        } else {
+            this.setState({inputValue: inputValue})
         }
     }
-    //
-    // _handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>): void  {
-    //
-    //     if (event.key === "Enter"){
-    //         this.setState({inputValue: event.currentTarget.value})
-    //     }
-    // }
 
     render() {
-        const destPath = this.state.inputValue;
+        console.log("render()")
+        console.log(this.state.watcher.getWatched())
+        const destPath = this.state.path;
+
+        const files: string[] = fs.readdirSync(destPath);
+        files.sort()
 
         return (
             <div>
@@ -211,22 +166,33 @@ class FileList extends React.Component<FileListProps, FileListState> {
                     type="text"
                     onChange={this.handleChange}
                     value={this.state.inputValue}
-                    // onKeyDown={this._handleKeyDown}
                 />
-                <ul>
+
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Имя</th>
+                        <th>Расширение</th>
+                        <th>Размер</th>
+                    </tr>
+                    </thead>
+                    <tbody>
                     {
-                        this.state.files.map(function (file) {
-                            return <li key={file}><File filename={file}/></li>
+                        files.map(function (file) {
+
+                            return <File key={file} filename={file} path={destPath}/>
                         })
                     }
-                </ul>
+                    </tbody>
+                </table>
+
             </div>
         )
-
     }
 }
 
 ReactDOM.render(
-    <FileList />,
+    <FileList/>,
     document.getElementById('root'),
 );

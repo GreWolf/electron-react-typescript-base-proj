@@ -1,7 +1,10 @@
 const lodash = require('lodash');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+// const IgnorePlugin = require('html-webpack-plugin');
 const path = require('path');
+const webpack = require('webpack');
+// const { IgnorePlugin } = require('webpack');
 
 function srcPaths(src) {
   return path.join(__dirname, src);
@@ -55,6 +58,7 @@ mainConfig.entry = './src/main/main.ts';
 mainConfig.target = 'electron-main';
 mainConfig.output.filename = 'main.bundle.js';
 mainConfig.plugins = [
+  new webpack.IgnorePlugin({ resourceRegExp: /^fsevents$/ }),
   new CopyPlugin({
     patterns: [
       {
@@ -83,6 +87,7 @@ rendererConfig.entry = './src/renderer/renderer.tsx';
 rendererConfig.target = 'electron-renderer';
 rendererConfig.output.filename = 'renderer.bundle.js';
 rendererConfig.plugins = [
+  new webpack.IgnorePlugin({ resourceRegExp: /^fsevents$/ }),
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, './public/index.html'),
   }),
