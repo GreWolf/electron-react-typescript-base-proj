@@ -10,7 +10,7 @@ import * as ReactDOM from 'react-dom';
 import * as fs from 'fs'
 import * as path from 'path'
 
-type FileProps = { filename: string, path: string }
+type FileProps = { filename: string, path: string, clickHandler: (path: string) => void }
 type FileState = {}
 
 class File extends React.Component<FileProps, FileState> {
@@ -29,10 +29,13 @@ class File extends React.Component<FileProps, FileState> {
             clearTimeout(this.clickTimeout)
             this.clickTimeout = null
 
-            const fileInfo = this.getFileInfo(path.join(this.props.path, this.props.filename))
+            const destPath = path.join(this.props.path, this.props.filename)
+
+            const fileInfo = this.getFileInfo(destPath)
 
             if (fileInfo.isDirectory) {
                 console.log("isDirectory")
+                this.props.clickHandler(destPath)
             }
 
         } else {
@@ -131,6 +134,8 @@ class FileList extends React.Component<FileListProps, FileListState> {
         this.state.watcher.unwatch(initialPath)
 
         this.handleChange = this.handleChange.bind(this);
+        this.clickHandler = this.clickHandler.bind(this);
+        this.onKeyPressed = this.onKeyPressed.bind(this);
     }
 
     handleChange(event: React.ChangeEvent<HTMLInputElement>): void {
@@ -152,6 +157,17 @@ class FileList extends React.Component<FileListProps, FileListState> {
         }
     }
 
+    onKeyPressed(e: React.KeyboardEvent<HTMLDivElement>) {
+        if(e.key === "Backspace"){
+            const newPath = path.dirname(this.state.path)
+            this.setState({inputValue: newPath, path: newPath})
+        }
+    }
+
+    clickHandler(path: string): void {
+        this.setState({inputValue: path, path: path})
+    }
+
     render() {
         console.log("render()")
         console.log(this.state.watcher.getWatched())
@@ -161,7 +177,7 @@ class FileList extends React.Component<FileListProps, FileListState> {
         files.sort()
 
         return (
-            <div>
+            <div onKeyDown={this.onKeyPressed} tabIndex={0}>
                 <input
                     type="text"
                     onChange={this.handleChange}
@@ -179,9 +195,8 @@ class FileList extends React.Component<FileListProps, FileListState> {
                     </thead>
                     <tbody>
                     {
-                        files.map(function (file) {
-
-                            return <File key={file} filename={file} path={destPath}/>
+                        files.map((file) => {
+                            return <File clickHandler={this.clickHandler} key={file} filename={file} path={destPath}/>
                         })
                     }
                     </tbody>
