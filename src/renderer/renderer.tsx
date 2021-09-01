@@ -135,6 +135,7 @@ type FileListState = {
     path: string,
     watcher: chokidar.FSWatcher,
     selectedItem: string
+    sorting: {sortKey: string, ascending: true}
 }
 
 class FileList extends React.Component<FileListProps, FileListState> {
@@ -160,10 +161,12 @@ class FileList extends React.Component<FileListProps, FileListState> {
                 ignoreInitial: true,
                 depth: 0
             }),
+            sorting: {sortKey: "Имя", ascending: true}
 
         }
 
         this.state.watcher.on('all', (eventName, path, stats) => {
+            console.log("on")
             this.setState({path: this.state.path})
         })
 
@@ -213,8 +216,6 @@ class FileList extends React.Component<FileListProps, FileListState> {
     }
 
     render() {
-        console.log("render()")
-        console.log(this.state.watcher.getWatched())
         const destPath = this.state.path;
 
         if (fs.existsSync(destPath)) {
